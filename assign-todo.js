@@ -67,9 +67,27 @@ app.get('/todos/', async (request, response) => {
   let getTodosQuery = ''
   const {search_q = '', priority, status, category} = request.query
 
-  switch (true) {
-    case hasPriorityAndStatusProperties(request.query):
-      getTodosQuery = `
+  if (status !== 'TO DO' && status !== 'IN PROGRESS' && status !== 'DONE') {
+    response.status = 400
+    response.body = 'Invalid Todo Status'
+  } else if (
+    priority !== 'HIGH' &&
+    priority !== 'MEDIUM' &&
+    priority !== 'LOW'
+  ) {
+    response.status = 400
+    response.body = 'Invalid Todo Priority'
+  } else if (
+    category !== 'WORK' &&
+    category !== 'HOME' &&
+    category !== 'LEARNING'
+  ) {
+    response.status = 400
+    response.body = 'Invalid Todo Category'
+  } else {
+    switch (true) {
+      case hasPriorityAndStatusProperties(request.query):
+        getTodosQuery = `
       SELECT
         *
       FROM
@@ -78,9 +96,9 @@ app.get('/todos/', async (request, response) => {
         todo LIKE '%${search_q}%'
         AND status = '${status}'
         AND priority = '${priority}';`
-      break
-    case hasPriorityProperty(request.query):
-      getTodosQuery = `
+        break
+      case hasPriorityProperty(request.query):
+        getTodosQuery = `
       SELECT
         *
       FROM
@@ -88,9 +106,9 @@ app.get('/todos/', async (request, response) => {
       WHERE
         todo LIKE '%${search_q}%'
         AND priority = '${priority}';`
-      break
-    case hasStatusProperty(request.query):
-      getTodosQuery = `
+        break
+      case hasStatusProperty(request.query):
+        getTodosQuery = `
       SELECT
         *
       FROM
@@ -98,9 +116,9 @@ app.get('/todos/', async (request, response) => {
       WHERE
         todo LIKE '%${search_q}%'
         AND status = '${status}';`
-      break
-    case hasCategoryProperty(request.query):
-      getTodosQuery = `
+        break
+      case hasCategoryProperty(request.query):
+        getTodosQuery = `
       SELECT
         *
       FROM
@@ -108,9 +126,9 @@ app.get('/todos/', async (request, response) => {
       WHERE
         todo LIKE '%${search_q}%'
         AND category = '${category}';`
-      break
-    case hasPriorityAndCategoryProperties(request.query):
-      getTodosQuery = `
+        break
+      case hasPriorityAndCategoryProperties(request.query):
+        getTodosQuery = `
       SELECT
         *
       FROM
@@ -119,9 +137,9 @@ app.get('/todos/', async (request, response) => {
         todo LIKE '%${search_q}%'
         AND category = '${category}'
         AND priority = '${priority}';`
-      break
-    case hasStatusAndCategoryProperties(request.query):
-      getTodosQuery = `
+        break
+      case hasStatusAndCategoryProperties(request.query):
+        getTodosQuery = `
       SELECT
         *
       FROM
@@ -130,20 +148,21 @@ app.get('/todos/', async (request, response) => {
         todo LIKE '%${search_q}%'
         AND category = '${category}'
         AND status = '${status}';`
-      break
+        break
 
-    default:
-      getTodosQuery = `
+      default:
+        getTodosQuery = `
       SELECT
         *
       FROM
         todo 
       WHERE
         todo LIKE '%${search_q}%';`
-  }
+    }
 
-  data = await database.all(getTodosQuery)
-  response.send(data)
+    data = await database.all(getTodosQuery)
+    response.send(data)
+  }
 })
 
 // GET Todo API
@@ -201,24 +220,46 @@ app.put('/todos/:todoId/', async (request, response) => {
       break
   }
 
-  const previousTodoQuery = `
+  if (
+    requestBody.status !== 'TO DO' &&
+    requestBody.status !== 'IN PROGRESS' &&
+    requestBody.status !== 'DONE'
+  ) {
+    response.status = 400
+    response.body = 'Invalid Todo Status'
+  } else if (
+    requestBody.priority !== 'HIGH' &&
+    requestBody.priority !== 'MEDIUM' &&
+    requestBody.priority !== 'LOW'
+  ) {
+    response.status = 400
+    response.body = 'Invalid Todo Priority'
+  } else if (
+    requestBody.category !== 'WORK' &&
+    requestBody.category !== 'HOME' &&
+    requestBody.category !== 'LEARNING'
+  ) {
+    response.status = 400
+    response.body = 'Invalid Todo Category'
+  } else {
+    const previousTodoQuery = `
     SELECT
       *
     FROM
       todo
     WHERE 
       id = ${todoId};`
-  const previousTodo = await database.get(previousTodoQuery)
+    const previousTodo = await database.get(previousTodoQuery)
 
-  const {
-    todo = previousTodo.todo,
-    priority = previousTodo.priority,
-    status = previousTodo.status,
-    category = previousTodo.category,
-    dueDate = previousTodo.due_date,
-  } = request.body
+    const {
+      todo = previousTodo.todo,
+      priority = previousTodo.priority,
+      status = previousTodo.status,
+      category = previousTodo.category,
+      dueDate = previousTodo.due_date,
+    } = request.body
 
-  const updateTodoQuery = `
+    const updateTodoQuery = `
     UPDATE
       todo
     SET
@@ -230,9 +271,9 @@ app.put('/todos/:todoId/', async (request, response) => {
     WHERE
       id = ${todoId};`
 
-  await database.run(updateTodoQuery)
-  response.send(`${updateColumn} Updated`)
-  console.log(`${updateColumn} Updated`)
+    await database.run(updateTodoQuery)
+    response.send(`${updateColumn} Updated`)
+  }
 })
 
 // Delete Todo API
